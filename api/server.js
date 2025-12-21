@@ -1,5 +1,11 @@
+require('dotenv').config();
+
 const dotenv = require('dotenv');
 const app = require('./app');
+const connectDB = require('./database/db');
+
+// Connecting database
+connectDB();
 
 // Load environment variables
 dotenv.config();
