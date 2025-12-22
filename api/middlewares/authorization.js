@@ -7,7 +7,7 @@ dotenv.config();
 const auth = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader;
 
     if (!token) {
       return res.status(401).json({
@@ -27,6 +27,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = currentUser;
+    console.log("User req", currentUser);
     next();
 
   } catch (error) {

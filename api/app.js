@@ -2,7 +2,8 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const errorMiddleware = require('./middlewares/error_middleware');
-const auth_router = require('./routes/auth_router');
+const authRouter = require('./routes/auth_router');
+const profileRouter = require('./routes/profile_routes');
 
 const app = express();
 
@@ -32,7 +33,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Example
 // app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/auth', auth_router);
+
+// Auth route
+app.use('/api/auth', authRouter);
+
+// Profile route
+app.use('/api', profileRouter);
+
+
 
 /*
 |--------------------------------------------------------------------------
