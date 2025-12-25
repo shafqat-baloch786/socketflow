@@ -2,6 +2,19 @@ const User = require('../models/User');
 const catchAsync = require('../utils/catch_async');
 
 
+
+// All users
+const allUsers = catchAsync(async (req, res, next) => {
+    const users = await User.find({ _id: { $ne: req.user._id } })
+        .select('name email avatar');
+    console.log("All users", users);
+    return res.status(200).json({
+        success: true,
+        count: users.length,
+        users
+    })
+})
+
 // Search users by name or email
 const searchUsers = catchAsync(async (req, res, next) => {
     const { query } = req.query;
@@ -39,4 +52,7 @@ const searchUsers = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { searchUsers };
+module.exports = {
+    searchUsers,
+    allUsers
+};

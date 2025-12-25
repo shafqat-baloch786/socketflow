@@ -20,8 +20,6 @@ const getChatHistory = catchAsync(async (req, res, next) => {
     .sort({ createdAt: 1 })
     .limit(50);
 
-
-    // An empty array is a valid response (new chat).
     res.status(200).json({
         success: true,
         count: messages.length,
@@ -29,4 +27,26 @@ const getChatHistory = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { getChatHistory };
+// ADDED THIS: The missing function for sending messages
+const sendMessage = catchAsync(async (req, res, next) => {
+    const { partnerId } = req.params;
+    const { content } = req.body;
+    const senderId = req.user._id;
+
+    const newMessage = await Message.create({
+        sender: senderId,
+        receiver: partnerId,
+        content: content
+    });
+
+    res.status(201).json({
+        success: true,
+        message: newMessage
+    });
+});
+
+// UPDATED EXPORTS
+module.exports = { 
+    getChatHistory, 
+    sendMessage 
+};

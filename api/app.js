@@ -43,7 +43,7 @@ app.use('/api/auth', authRouter);
 app.use('/api', profileRouter);
 
 // Messages/chats route
-app.use('/api', chatRouter);
+app.use('/api/chat', chatRouter);
 
 // Users router
 app.use('/api', userRouter);
