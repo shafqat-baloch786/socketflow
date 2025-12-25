@@ -4,6 +4,8 @@ const cors = require('cors');
 const errorMiddleware = require('./middlewares/error_middleware');
 const authRouter = require('./routes/auth_router');
 const profileRouter = require('./routes/profile_routes');
+const chatRouter = require('./routes/chat_routes');
+const userRouter = require('./routes/user_routes');
 
 const app = express();
 
@@ -39,6 +41,12 @@ app.use('/api/auth', authRouter);
 
 // Profile route
 app.use('/api', profileRouter);
+
+// Messages/chats route
+app.use('/api', chatRouter);
+
+// Users router
+app.use('/api', userRouter);
 
 
 
