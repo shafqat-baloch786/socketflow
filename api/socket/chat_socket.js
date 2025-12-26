@@ -1,8 +1,6 @@
 const User = require('../models/User');
 
 const chatSocket = (io, socket) => {
-  // LOG: Fires the moment the frontend calls socket.connect()
-  console.log(`--- NEW CONNECTION ATTEMPT: ${socket.id} ---`);
 
   // Handling login: Links the User ID to the Socket ID
   const handleLogin = async (userId) => {
@@ -19,7 +17,7 @@ const chatSocket = (io, socket) => {
         userId, 
         {
           isOnline: true,
-          socketId: socket.id // Crucial for your sendMessage controller
+          socketId: socket.id
         },
         { new: true }
       );
@@ -28,7 +26,6 @@ const chatSocket = (io, socket) => {
         console.log(`✅ DATABASE UPDATED: ${user.name} linked to ${socket.id}`);
         
         // 2. JOIN PRIVATE ROOM
-        // This allows you to use io.to(userId).emit(...) in other controllers
         socket.join(userId.toString());
         console.log(`🏠 User joined room: ${userId}`);
 
@@ -45,16 +42,15 @@ const chatSocket = (io, socket) => {
     }
   };
 
-  // Handling disconnect: Cleanup to prevent "Zombie" online users
+  // Handling disconnect
   const handleDisconnect = async () => {
-    console.log(`--- DISCONNECT DETECTED: ${socket.id} ---`);
     try {
       // Find the user who owned this socket ID
       const user = await User.findOneAndUpdate(
         { socketId: socket.id },
         { 
           isOnline: false, 
-          socketId: null, // Clear the ID so sendMessage knows they are gone
+          socketId: null,
           lastSeen: new Date() 
         },
         { new: true }
