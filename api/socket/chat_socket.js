@@ -1,67 +1,79 @@
 const User = require('../models/User');
 
 const chatSocket = (io, socket) => {
-  // LOG: This fires the moment a browser tab opens or refreshes
+  // LOG: Fires the moment the frontend calls socket.connect()
   console.log(`--- NEW CONNECTION ATTEMPT: ${socket.id} ---`);
 
-  // Handling login: This must run every time the frontend connects/refreshes
+  // Handling login: Links the User ID to the Socket ID
   const handleLogin = async (userId) => {
-    // DEBUG LOG: If you don't see this when you refresh the receiver's page, the frontend is broken
     console.log(`!!! LOGIN EVENT RECEIVED !!! UserID: ${userId} | SocketID: ${socket.id}`);
     
     try {
       if (!userId) {
-        console.log("Login failed: No userId provided in emit.");
+        console.log("❌ Login failed: No userId provided.");
         return;
       }
-      
-      // Update user with the CURRENT socket.id
+
+      // 1. Update the database
       const user = await User.findByIdAndUpdate(
         userId, 
         {
           isOnline: true,
-          socketId: socket.id // This links the DB user to this specific connection
+          socketId: socket.id // Crucial for your sendMessage controller
         },
         { new: true }
       );
 
       if (user) {
-        // DEBUG LOG: Confirms the DB actually saved the ID
-        console.log(`✅ DATABASE UPDATED: ${user.name} now has socketId: ${user.socketId}`);
+        console.log(`✅ DATABASE UPDATED: ${user.name} linked to ${socket.id}`);
         
-        // Notify others for real-time green dots
-        socket.broadcast.emit('userStatusChanged', { userId, isOnline: true });
+        // 2. JOIN PRIVATE ROOM
+        // This allows you to use io.to(userId).emit(...) in other controllers
+        socket.join(userId.toString());
+        console.log(`🏠 User joined room: ${userId}`);
+
+        // 3. Notify all other connected clients that this user is online
+        socket.broadcast.emit('userStatusChanged', { 
+          userId: userId, 
+          isOnline: true 
+        });
       } else {
-        console.log(`❌ DATABASE ERROR: User with ID ${userId} not found in DB.`);
+        console.log(`❌ DATABASE ERROR: User ID ${userId} not found.`);
       }
     } catch (err) {
-      console.error("Error in socket handleLogin:", err);
+      console.error("Error in handleLogin:", err);
     }
   };
 
-  // Handling disconnect: Clean up so we don't try to send messages to a closed pipe
+  // Handling disconnect: Cleanup to prevent "Zombie" online users
   const handleDisconnect = async () => {
     console.log(`--- DISCONNECT DETECTED: ${socket.id} ---`);
     try {
+      // Find the user who owned this socket ID
       const user = await User.findOneAndUpdate(
         { socketId: socket.id },
         { 
           isOnline: false, 
-          socketId: null, 
+          socketId: null, // Clear the ID so sendMessage knows they are gone
           lastSeen: new Date() 
         },
         { new: true }
       );
       
       if (user) {
-        console.log(`🔴 User ${user.name} unlinked from DB.`);
-        socket.broadcast.emit('userStatusChanged', { userId: user._id, isOnline: false });
+        console.log(`🔴 User ${user.name} is now offline.`);
+        // Notify others
+        socket.broadcast.emit('userStatusChanged', { 
+          userId: user._id, 
+          isOnline: false 
+        });
       }
     } catch (err) {
-      console.error("Error in socket handleDisconnect:", err);
+      console.error("Error in handleDisconnect:", err);
     }
   };
 
+  // Listen for events from frontend
   socket.on('login', handleLogin);
   socket.on('disconnect', handleDisconnect);
 };

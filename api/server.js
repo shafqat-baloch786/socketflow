@@ -7,12 +7,12 @@ const socketHandler = require('./socket/index');
 
 const PORT = process.env.PORT || 4000;
 
-// Connect to Database
+// 1. Connect to Database
 connectDB();
 
 const server = http.createServer(app);
 
-// Initialize Socket.io
+// 2. Initialize Socket.io
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -20,9 +20,17 @@ const io = new Server(server, {
   }
 });
 
-socketHandler(io);
+// 3. CRITICAL: Attach io to the app instance 
+// This makes req.app.get('socketio') work in your controllers
+app.set('socketio', io);
 
-// Pass the io instance to your socket controller
+// 4. Setup the Connection Listener
+io.on('connection', (socket) => {
+  console.log(`--- NEW SOCKET CONNECTED: ${socket.id} ---`);
+  
+  // Pass both the global 'io' and the specific 'socket' to your handler
+  socketHandler(io, socket);
+});
 
 server.listen(PORT, () => {
   console.log(`Socketflow server is running on port ${PORT}`);

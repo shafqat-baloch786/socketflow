@@ -1,29 +1,23 @@
-// npm install socket.io-client
-
 const { io } = require("socket.io-client");
 
-// Replace with your server URL and port
 const SERVER_URL = "http://localhost:4000";
-
-// Connect to Socket.IO server
 const socket = io(SERVER_URL);
 
-// When connected
+// Use the ID of the user you want to bring "Online"
+const TEST_USER_ID = "694e76d4ecedd376187caaec"; 
+
 socket.on("connect", () => {
-  console.log("Connected to Socket.IO server!");
-  console.log("Socket ID:", socket.id);
+  console.log("✅ Connected! Socket ID:", socket.id);
 
-  // Send a test event to the server
-  socket.emit("hello", "Hi server! This is client.js");
+  console.log(`🚀 Emitting 'login' for User: ${TEST_USER_ID}`);
+  socket.emit("login", TEST_USER_ID);
 });
 
-// Listen for a reply from the server
-socket.on("reply", (message) => {
-  console.log("Server says:", message);
+// Listen for the broadcast the server sends out when someone logs in
+socket.on("userStatusChanged", (data) => {
+  console.log("📢 Server Broadcast Received:", data);
 });
 
-// When disconnected
 socket.on("disconnect", () => {
-  console.log("Disconnected from server!");
+  console.log("❌ Disconnected from server");
 });
-

@@ -13,44 +13,57 @@ import ChatPage from '@/pages/chat_page';
 import ProfilePage from '@/pages/profile_page';
 import UsersPage from '@/pages/users_page';
 
-// INDUSTRY STANDARD: Global Socket Controller
-// This ensures the user is marked 'Online' regardless of the page they are on.
+/**
+ * SocketHandler handles real-time presence.
+ * - Connects/Identifies when the app is active and visible.
+ * - Disconnects when the user leaves the tab or closes the site.
+ */
 const SocketHandler = ({ children }) => {
     const { user, isAuthenticated } = useAuth();
 
     useEffect(() => {
-        // Only attempt connection if we have a valid authenticated user
         if (isAuthenticated && user) {
             const userId = user._id || user.id;
 
-            // 1. Establish initial connection
-            if (!socket.connected) {
+            const handlePresence = () => {
+                // 'visible' means the user is looking at your website tab
+                if (document.visibilityState === 'visible') {
+                    if (!socket.connected) {
+                        console.log("Tab Active: Connecting Socket...");
+                        socket.connect();
+                    }
+                } else {
+                    // 'hidden' means they switched tabs or minimized the browser
+                    console.log("Tab Hidden: Disconnecting for Presence...");
+                    socket.disconnect();
+                }
+            };
+
+            const identify = () => {
+                if (socket.id) {
+                    console.log(`Presence: User ${userId} is now Online`);
+                    socket.emit('login', userId);
+                }
+            };
+
+            // Setup listeners
+            socket.on('connect', identify);
+            document.addEventListener('visibilitychange', handlePresence);
+
+            // Initial Action
+            if (document.visibilityState === 'visible') {
                 socket.connect();
             }
 
-            // 2. The Identity Handshake
-            // This function is defined separately so it can be reused
-            const identify = () => {
-                console.log(`Socket connected. Identifying user: ${userId}`);
-                socket.emit('login', userId);
-            };
-
-            // If already connected, identify immediately
-            if (socket.connected) identify();
-
-            // 3. Setup listeners for connection lifecycle
-            socket.on('connect', identify);
-
-            // Optional: Global listeners (e.g., if you want to show a toast for new messages)
-            // socket.on('newMessage', (msg) => { ... });
-
+            // Cleanup on Unmount or Logout
             return () => {
-                console.log("Cleaning up global socket listeners");
+                console.log("Cleaning up presence listeners");
                 socket.off('connect', identify);
+                document.removeEventListener('visibilitychange', handlePresence);
                 socket.disconnect();
             };
         } else {
-            // If user logs out, disconnect socket immediately
+            // Disconnect if user logs out manually
             if (socket.connected) socket.disconnect();
         }
     }, [user, isAuthenticated]);
