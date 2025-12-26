@@ -10,8 +10,12 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Live Demo](#live-demo)
 - [Features](#features)
-- [Tech Stack](#tech-stack)
+- [How It Works](#how-it-works)
+- [System Architecture](#system-architecture)
+- [Tech Stack & Technical Challenges](#tech-stack--technical-challenges)
+- [Future Improvements / Roadmap](#future-improvements--roadmap)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [API Endpoints](#api-endpoints)
@@ -24,37 +28,95 @@
 
 ## Overview
 
-SocketFlow is a **real-time chat application** that allows users to:
+SocketFlow is a **real-time chat application** enabling users to securely register, login, maintain profiles, search for other users, and send/receive messages instantly. It uses **JWT-based authentication** and **Socket.IO** for real-time communication.
 
-- Register and log in securely
-- Maintain user profiles
-- Search for other users
-- Send and receive messages instantly
-- View online/offline status of users
+### Live Demo
 
-This app leverages **JWT-based authentication** for secure routes and **Socket.IO** for real-time communication.
+> [Live Demo Link will be added here]  
+> (Replace with your hosted app link)
+
+### Screenshot / GIF
+
+![Chat Screenshot/GIF will be added here]  
+> (Add your screenshot or GIF link)
 
 ---
 
 ## Features
 
-- **Authentication**: Registration & Login with JWT
-- **User Profiles**: View & edit profile data
-- **User Management**: Fetch all users, search by name/email
-- **Real-Time Messaging**: One-to-one messaging with unread status
-- **Online Status**: Track online/offline users with last seen
-- **Minimal & Clean API**: RESTful endpoints and Socket.IO events
+- User registration and login with JWT
+- View and edit user profile
+- Search users by name/email
+- One-to-one real-time messaging
+- Online/offline status tracking
+- Unread message notifications
+- Security-first approach using Helmet and Bcrypt
+- Global error handling for all API routes
 
 ---
 
-## Tech Stack
+## How It Works
 
-- **Backend**: Node.js, Express
-- **Database**: MongoDB, Mongoose
-- **Realtime**: Socket.IO
-- **Authentication**: JWT
-- **Security**: Helmet, CORS
-- **Password Hashing**: Bcrypt
+**User Login & JWT Flow**
+1. User sends email/password → server validates → generates JWT → client stores token.
+2. Token is sent in `Authorization` header for protected routes.
+
+**Real-Time Messaging Flow**
+1. Client emits `sendMessage` → server receives → stores in MongoDB.
+2. Server emits `newMessage` to the recipient’s socket room.
+3. UI updates immediately without refresh.
+
+**Online Status Tracking**
+- Socket connects → updates `isOnline` in DB.
+- Socket disconnect → sets `isOnline = false` and updates `lastSeen`.
+- Broadcasts status changes to all clients in real-time.
+
+**Search Users / All Users**
+- Search uses MongoDB regex queries → filters out current user → returns minimal fields.
+- Optimized for performance using indexes on `_id` and `name/email`.
+
+---
+
+## System Architecture
+
+**Architecture Pattern:** MVC (Model-View-Controller) + Middleware
+
+**Message Flow:**
+```
+Frontend (React/Vue/HTML) 
+     │
+     ├─> HTTP Requests (REST API) -> Express Routes -> Controllers -> MongoDB
+     │
+     └─> Socket.IO Events -> Socket Handlers -> MongoDB -> Emit to recipient
+```
+
+---
+
+## Tech Stack & Technical Challenges
+
+- **Backend**: Node.js, Express (lightweight, scalable)
+- **Database**: MongoDB, Mongoose (NoSQL flexibility for chat data)
+- **Realtime**: Socket.IO (automatic reconnection, room management)
+- **Authentication**: JWT (stateless, secure)
+- **Security**: Helmet (headers), Bcrypt (password hashing)
+
+**Technical Challenges:**
+- Efficiently storing and retrieving chat history using Mongoose aggregation.
+- Linking socket IDs to users for real-time delivery.
+- Global error handling using middleware to catch async errors.
+- Maintaining online/offline status for users in real-time.
+
+---
+
+## Future Improvements / Roadmap
+
+- Implement **group chats / channels**
+- Add **message read receipts**
+- Support **media/file uploads**
+- Implement **end-to-end encryption**
+- Add **push notifications / mobile integration**
+- Enhance **search and filter functionalities**
+- Optimize **scalability** for larger user bases
 
 ---
 
@@ -71,19 +133,19 @@ cd socketflow/api
 npm install
 ```
 
-3. Run the server:
-```bash
-npm run dev
-```
+3. Ensure MongoDB is running locally or set up an Atlas cluster.
 
-Server will start on `http://localhost:4000`
+4. Run the server:
+```bash
+npm run dev   # runs server in development mode with hot reload
+npm start     # runs server in production mode
+```
 
 ---
 
 ## Configuration
 
-Create a `.env` file in the root directory:
-
+Create a `.env` file in the root of `api`:
 ```
 PORT=4000
 MONGO_URI=<your-mongodb-uri>
@@ -97,46 +159,44 @@ JWT_EXPIRES_IN=7d
 
 ### Auth
 
-| Method | Endpoint        | Description               |
-|--------|----------------|---------------------------|
-| POST   | /api/auth/register | Register new user       |
-| POST   | /api/auth/login    | Login user             |
+| Method | Endpoint | Request Body | Response Example | Description |
+|--------|---------|--------------|----------------|-------------|
+| POST   | /api/auth/register | `{ name, email, password }` | `{ success: true, token, user }` | Register new user |
+| POST   | /api/auth/login | `{ email, password }` | `{ success: true, token, user }` | Login user |
 
 ### Profile
 
-| Method | Endpoint           | Description               |
-|--------|------------------|---------------------------|
-| GET    | /api/profile       | Get logged-in user's profile |
-| PATCH  | /api/edit-profile  | Update logged-in user's profile |
+| Method | Endpoint | Request Body | Response Example | Description |
+|--------|---------|--------------|----------------|-------------|
+| GET    | /api/profile | - | `{ success: true, user }` | Get logged-in user's profile |
+| PATCH  | /api/edit-profile | `{ name?, email?, avatar? }` | `{ success: true, user }` | Update profile |
 
 ### Users
 
-| Method | Endpoint       | Description                         |
-|--------|----------------|-------------------------------------|
-| GET    | /api/users     | Get all users (excluding self)      |
-| GET    | /api/user?query= | Search users by name/email         |
+| Method | Endpoint | Query/Body | Response Example | Description |
+|--------|---------|-----------|----------------|-------------|
+| GET    | /api/users | - | `{ success: true, users }` | Get all users excluding self |
+| GET    | /api/user | `?query=string` | `{ success: true, users }` | Search users by name/email |
 
 ### Chat
 
-| Method | Endpoint                | Description                       |
-|--------|-------------------------|-----------------------------------|
-| GET    | /api/chat/all-chats      | Get all recent conversations       |
-| GET    | /api/chat/:partnerId     | Get chat history with a specific user |
-| POST   | /api/chat/:partnerId     | Send a message to a specific user |
+| Method | Endpoint | Request Body | Response Example | Description |
+|--------|---------|--------------|----------------|-------------|
+| GET    | /api/chat/all-chats | - | `{ success: true, chats }` | Get all recent conversations |
+| GET    | /api/chat/:partnerId | - | `{ success: true, messages }` | Get chat history with a user |
+| POST   | /api/chat/:partnerId | `{ content }` | `{ success: true, message }` | Send a message |
 
 ---
 
 ## Socket.IO Events
 
-### Client emits:
-
-- `login` – Log in a user and attach Socket ID
-- `disconnect` – Triggered automatically when user disconnects
-
-### Server emits:
-
-- `newMessage` – Real-time new message
-- `userStatusChanged` – Update online/offline status
+| Event | Type | Data Payload | Description |
+| :--- | :--- | :--- | :--- |
+| `login` | Emit | `userId` | Login and attach Socket ID, join private room |
+| `disconnect` | Emit | - | Triggered automatically when user disconnects |
+| `sendMessage` | Emit | `{ recipientId, text }` | Sends a message to a specific user |
+| `newMessage` | Listen | `{ senderId, text, timestamp }` | Receives incoming messages in real-time |
+| `userStatusChanged` | Listen | `{ userId, isOnline }` | Update online/offline status in UI |
 
 ---
 
@@ -144,8 +204,8 @@ JWT_EXPIRES_IN=7d
 
 ```
 socketflow/api
-├── app.js                 # Express application setup
-├── server.js              # HTTP server + Socket.IO initialization
+├── app.js
+├── server.js
 ├── controllers
 │   ├── auth_controller.js
 │   ├── chat_controller.js
@@ -160,7 +220,7 @@ socketflow/api
 │   ├── profile_routes.js
 │   └── user_routes.js
 ├── socket
-│   └── index.js            # Socket.IO handlers (test file removed)
+│   └── index.js
 ├── utils
 │   ├── catch_async.js
 │   ├── Error_handler.js
@@ -170,21 +230,21 @@ socketflow/api
     └── error_middleware.js
 ```
 
-*Note: Test and client scripts are excluded for a cleaner, production-ready structure.*
+*Note: Excludes `web` folder and test scripts for a production-ready structure.*
 
 ---
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/YourFeature`
-3. Commit your changes: `git commit -m "feat: Add your feature"`
-4. Push to the branch: `git push origin feature/YourFeature`
-5. Open a pull request
+1. Fork the repo
+2. Create a branch: `git checkout -b feature/YourFeature`
+3. Commit changes: `git commit -m "feat: Add your feature"`
+4. Push branch: `git push origin feature/YourFeature`
+5. Open a Pull Request
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License
 
