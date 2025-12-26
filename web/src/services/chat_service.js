@@ -41,3 +41,4 @@ export const sendMessage = async (partnerId, content) => {
         throw error;
     }
 };
+
