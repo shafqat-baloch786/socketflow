@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllUsers } from '@/services/user_service';
-import { MessageSquare, Users, Loader2, Search } from 'lucide-react';
+import { MessageSquare, Users, Loader2, Search, Clock } from 'lucide-react';
 
 const UsersPage = () => {
     const [users, setUsers] = useState([]);
@@ -23,7 +23,6 @@ const UsersPage = () => {
         fetchUsers();
     }, []);
 
-    // Filter users locally for better performance
     const filteredUsers = users.filter(user => 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -76,10 +75,27 @@ const UsersPage = () => {
                                         className="w-20 h-20 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform"
                                         alt={user.name}
                                     />
-                                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-4 border-white rounded-full"></div>
+                                    
+                                    {/* DYNAMIC STATUS DOT */}
+                                    <div className={`absolute -bottom-1 -right-1 w-5 h-5 border-4 border-white rounded-full transition-colors ${
+                                        user.isOnline ? 'bg-green-500' : 'bg-slate-300'
+                                    }`}></div>
                                 </div>
                                 
                                 <h3 className="text-lg font-bold text-slate-900 truncate w-full">{user.name}</h3>
+                                
+                                {/* DYNAMIC STATUS TEXT */}
+                                {user.isOnline ? (
+                                    <p className="text-xs font-bold text-green-500 mb-1 flex items-center justify-center gap-1">
+                                        ● Online
+                                    </p>
+                                ) : (
+                                    <p className="text-[10px] text-slate-400 mb-1 flex items-center justify-center gap-1">
+                                        <Clock size={10} />
+                                        {user.lastSeen ? `Last seen ${new Date(user.lastSeen).toLocaleDateString()}` : 'Offline'}
+                                    </p>
+                                )}
+
                                 <p className="text-sm text-slate-500 truncate w-full mb-6">{user.email}</p>
                                 
                                 <button 
