@@ -21,7 +21,6 @@ const io = new Server(server, {
 });
 
 // 3. CRITICAL: Attach io to the app instance 
-// This makes req.app.get('socketio') work in your controllers
 app.set('socketio', io);
 
 // 4. Setup the Connection Listener
