@@ -1,21 +1,15 @@
-
 const chatSocket = require('./chat_socket');
 
-const socketHandler = (io) => {
-  io.on('connection', (socket) => {
-    console.log(`✅ New client connected: ${socket.id}`);
+const socketInit = (io) => {
+  return (socket) => {
+    console.log(`--- NEW SOCKET CONNECTED: ${socket.id} ---`);
 
-    // Attach chatSocket events
     chatSocket(io, socket);
 
     socket.on('disconnect', () => {
-      console.log(`❌ Client disconnected: ${socket.id}`);
+      console.log(`--- SOCKET DISCONNECTED: ${socket.id} ---`);
     });
-  });
+  };
 };
 
-module.exports = socketHandler;
-
-
-
-
+module.exports = socketInit;

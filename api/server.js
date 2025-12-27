@@ -3,16 +3,17 @@ const app = require('./app');
 const http = require('http');
 const connectDB = require('./database/db');
 const { Server } = require('socket.io');
-const socketHandler = require('./socket/index');
+const socketInit = require('./socket');
 
 const PORT = process.env.PORT || 4000;
 
 // 1. Connect to Database
 connectDB();
 
+// 2. Create HTTP server
 const server = http.createServer(app);
 
-// 2. Initialize Socket.io
+// 3. Initialize Socket.IO
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -20,17 +21,13 @@ const io = new Server(server, {
   }
 });
 
-// 3. CRITICAL: Attach io to the app instance 
+// 4. Attach io to Express (optional but useful)
 app.set('socketio', io);
 
-// 4. Setup the Connection Listener
-io.on('connection', (socket) => {
-  console.log(`--- NEW SOCKET CONNECTED: ${socket.id} ---`);
-  
-  // Pass both the global 'io' and the specific 'socket' to your handler
-  socketHandler(io, socket);
-});
+// 5. Initialize socket connection handler
+io.on('connection', socketInit(io));
 
+// 6. Start server
 server.listen(PORT, () => {
-  console.log(`Socketflow server is running on port ${PORT}`);
+  console.log(`🚀 Socketflow server running on port ${PORT}`);
 });
