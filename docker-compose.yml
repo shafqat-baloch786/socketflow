@@ -1,0 +1,28 @@
+services:
+  # Backend Configuration
+  backend:
+    build: ./api
+    container_name: socketflow-backend
+    ports:
+      - "4000:4000"
+    # SECURE: Pulled from your private api/.env file
+    env_file:
+      - ./api/.env
+    volumes:
+      - ./api:/usr/src/app
+      - /usr/src/app/node_modules
+
+  # Frontend Configuration
+  frontend:
+    build: ./web
+    container_name: socketflow-frontend
+    ports:
+      - "5173:5173"
+    # CONVENIENT: Public URLs can stay here
+    environment:
+      - VITE_API_URL=http://localhost:4000
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    depends_on:
+      - backend
