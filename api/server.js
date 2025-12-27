@@ -24,7 +24,7 @@ const io = new Server(server, {
 // 4. Attach io to Express (optional but useful)
 app.set('socketio', io);
 
-// 5. Initialize socket connection handler
+// 5. Initialize/call socket connection handler
 io.on('connection', socketInit(io));
 
 // 6. Start server
