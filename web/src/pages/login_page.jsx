@@ -23,7 +23,7 @@ const LoginPage = () => {
             login(data.user, data.token);
             
             // Redirecting directly to profile as requested
-            navigate('/profile'); 
+            navigate('/users'); 
         } catch (err) {
             setError(err.response?.data?.message || "Invalid email or password");
         } finally {
