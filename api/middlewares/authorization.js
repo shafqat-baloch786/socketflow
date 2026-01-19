@@ -19,7 +19,6 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Decoded", decoded);
 
     const currentUser = await User.findById(decoded.id);
     if (!currentUser) {
@@ -30,7 +29,6 @@ const auth = async (req, res, next) => {
     }
 
     req.user = currentUser;
-    console.log("User req", currentUser);
     next();
 
   } catch (error) {
